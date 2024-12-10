@@ -1,29 +1,25 @@
 package src.TaskExecutor;
 
-import java.util.Random;
-
 public class Consumer extends Thread {
-    IProdConsBuffer buffer;
+    ProdConsBuffer buffer;
     int id;
     int consTime;
-    int maxCons;
-    int minCons;
+    boolean running = false;
 
-    public Consumer(IProdConsBuffer buffer, int id, int consTime, int minCons, int maxCons) {
+    public Consumer(ProdConsBuffer buffer, int id, int consTime) {
         this.buffer = buffer;
         this.id = id;
         this.consTime = consTime;
-        this.minCons = minCons;
-        this.maxCons = maxCons;
     }
 
     public void run() {
-
         while (true) {
-            Random rand = new Random();
+
             try {
-                Message m = buffer.get(rand.nextInt(maxCons - minCons + 1) + minCons)[0];
+                Message m = buffer.get();
+                running = true;
                 m.run();
+                running = false;
                 Thread.yield();
                 Thread.sleep(consTime);
             } catch (InterruptedException e) {
@@ -31,6 +27,7 @@ public class Consumer extends Thread {
                 return;
             }
         }
+
     }
 
 }

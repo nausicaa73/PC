@@ -8,9 +8,11 @@ import java.io.InputStreamReader;
 
 public class Message implements Runnable {
     String programme;
+    String args;
 
-    public Message(String programme) {
+    public Message(String programme, String paramètre) {
         this.programme = programme;
+        this.args = paramètre;
     }
 
     public String toString() {
@@ -22,7 +24,7 @@ public class Message implements Runnable {
         try {
             // Commande pour exécuter un programme Java (par exemple HelloWorld)
             ProcessBuilder builder = new ProcessBuilder(
-                    "java", "-cp", "./", programme, "HelloWorld");
+                    "java", "-cp", "./", programme, args);
 
             // Redirige la sortie standard et les erreurs
             builder.redirectErrorStream(true);

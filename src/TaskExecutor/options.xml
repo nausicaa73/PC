@@ -3,11 +3,11 @@
 <properties>
 <entry key="nProd">2</entry>
 <entry key="nCons">2</entry>
-<entry key="bufSz">1</entry>
-<entry key="prodTime">1</entry>
-<entry key="consTime">1</entry>
+<entry key="bufSz">3</entry>
+<entry key="prodTime">1000</entry>
+<entry key="consTime">100</entry>
 <entry key="minProd">1</entry>
-<entry key="maxProd">2</entry>
+<entry key="maxProd">5</entry>
 <entry key="minCons">1</entry>
 <entry key="maxCons">1</entry>
 <entry key="minQuantity">1</entry>

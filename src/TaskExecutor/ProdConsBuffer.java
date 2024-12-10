@@ -1,9 +1,14 @@
 package src.TaskExecutor;
 
-import java.util.concurrent.Semaphore;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Map;
 
-public class ProdConsBuffer implements IProdConsBuffer {
+import java.util.Iterator;
+
+public class ProdConsBuffer extends Thread {
     Message[] buffer;
+    ArrayList<Map.Entry<Consumer, Integer>> consumers = new ArrayList<Map.Entry<Consumer, Integer>>();
     int in = 0;
     int out = 0;
     int size = 0;
@@ -13,6 +18,16 @@ public class ProdConsBuffer implements IProdConsBuffer {
     public ProdConsBuffer(int capacity) {
         this.capacity = capacity;
         buffer = new Message[capacity];
+        start();
+    }
+
+    public synchronized boolean isfree() {
+        for (int i = 0; i < consumers.size(); i++) {
+            if (!consumers.get(i).getKey().running) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public synchronized void put(Message o) {
@@ -23,12 +38,21 @@ public class ProdConsBuffer implements IProdConsBuffer {
                 e.printStackTrace();
             }
         }
+        System.out.println("Producer put");
         buffer[in] = o;
         totmsg++;
         in = (in + 1) % capacity;
         size++;
-        print_buffer();
+        // print_buffer();
+
+        if (consumers.size() == 0 || !isfree()) {
+            Map.Entry<Consumer, Integer> e = new AbstractMap.SimpleEntry<>(new Consumer(this, 1, 100), 0);
+            consumers.add(e);
+            consumers.get(consumers.size() - 1).getKey().start();
+        }
+
         notifyAll();
+
     }
 
     public synchronized Message get() throws InterruptedException {
@@ -42,38 +66,9 @@ public class ProdConsBuffer implements IProdConsBuffer {
         Message o = buffer[out];
         out = (out + 1) % capacity;
         size--;
-        // mutex.release();
-        print_buffer();
+        // print_buffer();
         notifyAll();
         return o;
-
-    }
-
-    @Override
-    public synchronized Message[] get(int k) throws InterruptedException {
-        // TODO Auto-generated method stub
-        // mutex.acquire();
-        System.out.println("Consumer " + Thread.currentThread().getId() + " consumed " + k);
-        Message[] res = new Message[k];
-        for (int i = 0; i < k; i++) {
-            while (size == 0) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    throw e;
-                }
-            }
-            res[i] = buffer[out];
-            out = (out + 1) % capacity;
-            size--;
-
-            print_buffer();
-        }
-
-        // mutex.release();
-
-        notifyAll();
-        return res;
 
     }
 
@@ -150,16 +145,32 @@ public class ProdConsBuffer implements IProdConsBuffer {
         System.out.println();
     }
 
-    @Override
-    public int nmsg() {
-        // TODO Auto-generated method stub
-        return size;
-    }
+    public void run() {
+        while (true) {
+            try {
+                Thread.sleep(1000);
+                synchronized (this) {
+                    if (consumers.size() == 0) {
+                        continue;
+                    }
+                    Iterator<Map.Entry<Consumer, Integer>> iterator = consumers.iterator();
+                    while (iterator.hasNext()) {
+                        Map.Entry<Consumer, Integer> c = iterator.next();
+                        if (!c.getKey().running) {
+                            if (c.getValue() == 2) {
+                                c.getKey().interrupt();
+                                iterator.remove(); // Supprime l'élément en toute sécurité
+                            } else {
+                                c.setValue(c.getValue() + 1);
+                            }
+                        }
+                    }
+                }
 
-    @Override
-    public int totmsg() {
-        // TODO Auto-generated method stub
-        return totmsg;
+            } catch (InterruptedException e) {
+                return;
+            }
+            System.out.println("Nombre de consumers: " + consumers.size());
+        }
     }
-
 }

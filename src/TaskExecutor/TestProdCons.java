@@ -23,7 +23,7 @@ public class TestProdCons {
     public static void main(String[] args) throws InvalidPropertiesFormatException, IOException {
         Properties properties = new Properties();
         properties.loadFromXML(
-                TestProdCons.class.getClassLoader().getResourceAsStream("./src/options.xml"));
+                TestProdCons.class.getClassLoader().getResourceAsStream("./src/TaskExecutor/options.xml"));
         nProd = Integer.parseInt(properties.getProperty("nProd"));
         nCons = Integer.parseInt(properties.getProperty("nCons"));
         buffersize = Integer.parseInt(properties.getProperty("bufSz"));
@@ -40,14 +40,9 @@ public class TestProdCons {
         }
         ProdConsBuffer buffer = new ProdConsBuffer(buffersize);
         Thread[] threads_prod = new Thread[nProd];
-        Thread[] threads_cons = new Thread[nCons];
         for (int i = 0; i < nProd; i++) {
             threads_prod[i] = new Producer(buffer, i, minProd, maxProd, prodTime);
             threads_prod[i].start();
-        }
-        for (int i = 0; i < nCons; i++) {
-            threads_cons[i] = new Consumer(buffer, i, consTime, minCons, maxCons);
-            threads_cons[i].start();
         }
         for (int i = 0; i < nProd; i++) {
             try {
@@ -56,17 +51,14 @@ public class TestProdCons {
                 e.printStackTrace();
             }
         }
-        while (buffer.getSize() > 0) {
+        while (buffer.size > 0 || !buffer.consumers.isEmpty()) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        for (int i = 0; i < nCons; i++) {
-            threads_cons[i].interrupt();
-        }
-        System.out.println("End of simulation " + buffer.totmsg() + " messages produced");
+        buffer.interrupt();
 
     }
 }

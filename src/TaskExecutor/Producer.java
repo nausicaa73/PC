@@ -1,4 +1,4 @@
-package src;
+package src.TaskExecutor;
 
 import java.util.Random;
 
@@ -11,15 +11,12 @@ public class Producer extends Thread {
     int maxQuantity;
     int minQuantity;
 
-    public Producer(IProdConsBuffer buffer, int id, int minProd, int maxProd, int prodTime, int minQuantity,
-            int maxQuantity) {
+    public Producer(IProdConsBuffer buffer, int id, int minProd, int maxProd, int prodTime) {
         this.buffer = buffer;
         this.id = id;
         this.minProd = minProd;
         this.maxProd = maxProd;
         this.prodTime = prodTime;
-        this.minQuantity = minQuantity;
-        this.maxQuantity = maxQuantity;
 
     }
 
@@ -28,12 +25,8 @@ public class Producer extends Thread {
         Random rand = new Random();
         int nb = rand.nextInt(maxProd - minProd) + minProd;
         for (int i = 0; i < nb; i++) {
-            Message m;
-            if (maxQuantity - minQuantity == 0) {
-                m = new Message(id, minQuantity);
-            } else {
-                m = new Message(id, rand.nextInt(maxQuantity - minQuantity) + minQuantity);
-            }
+            Message m = new Message("src.TaskExecutor.Tache");
+
             try {
                 buffer.put(m);
                 Thread.yield();

@@ -2,77 +2,96 @@ package src;
 
 import java.util.concurrent.Semaphore;
 
-public class ProdConsBuffer implements IProdConsBuffer {
+public class ProdConsBuffer_synchrone implements IProdConsBuffer {
     Message[] buffer;
+    Semaphore[] mutex;
+    int compteur;
     int in = 0;
     int out = 0;
     int size = 0;
     int capacity;
     int totmsg = 0;
+    Semaphore s = new Semaphore(1, true);
 
-    public ProdConsBuffer(int capacity) {
+    public ProdConsBuffer_synchrone(int capacity) {
         this.capacity = capacity;
         buffer = new Message[capacity];
+        mutex = new Semaphore[capacity];
+        compteur = 1;
     }
 
-    public synchronized void put(Message o) {
+    public void put(Message o) {
+        try {
+            s.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         while (size == capacity) {
+            s.release();
             try {
-                wait();
+                s.acquire();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
         buffer[in] = o;
+        mutex[in] = new Semaphore(0, true);
+
         totmsg++;
-        in = (in + 1) % capacity;
         size++;
         print_buffer();
-        notifyAll();
+        System.out.println("Producer " + Thread.currentThread().getId() + " produced " + o.quantite + " in " + in);
+        int temp = in;
+        in = (in + 1) % capacity;
+        s.release();
+        try {
+            mutex[temp].acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
-    public synchronized Message get() throws InterruptedException {
+    public Message get() throws InterruptedException {
+        try {
+            s.acquire();
+        } catch (InterruptedException e) {
+            throw e;
+        }
         while (size == 0) {
+            s.release();
             try {
-                wait();
+                s.acquire();
             } catch (InterruptedException e) {
                 throw e;
             }
         }
         Message o = buffer[out];
-        out = (out + 1) % capacity;
-        size--;
-        // mutex.release();
-        print_buffer();
-        notifyAll();
+        if (o.quantite > compteur) {
+            compteur++;
+            System.out.println("Consumer " + Thread.currentThread().getId() + " wait in " + out);
+            s.release();
+            mutex[out].acquire();
+        } else {
+            compteur = 1;
+            size--;
+            mutex[out].release(o.quantite);
+            print_buffer();
+            System.out.println("Consumer " + Thread.currentThread().getId() + " consumed last in " + out);
+            out = (out + 1) % capacity;
+            s.release();
+        }
+
         return o;
 
     }
 
     @Override
-    public synchronized Message[] get(int k) throws InterruptedException {
+    public Message[] get(int k) throws InterruptedException {
         // TODO Auto-generated method stub
         // mutex.acquire();
-        System.out.println("Consumer " + Thread.currentThread().getId() + " consumed " + k);
-        Message[] res = new Message[k];
-        for (int i = 0; i < k; i++) {
-            while (size == 0) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    throw e;
-                }
-            }
-            res[i] = buffer[out];
-            out = (out + 1) % capacity;
-            size--;
 
-            print_buffer();
-        }
-
-        // mutex.release();
-
-        notifyAll();
+        Message[] res = new Message[1];
+        res[0] = get();
         return res;
 
     }

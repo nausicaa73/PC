@@ -1,4 +1,4 @@
-package src;
+package src.TaskExecutor;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -38,11 +38,11 @@ public class TestProdCons {
         if (maxQuantity > nCons) {
             throw new InvalidPropertiesFormatException("maxQuantity must be less than nCons");
         }
-        ProdConsBuffer_synchrone buffer = new ProdConsBuffer_synchrone(buffersize);
+        ProdConsBuffer buffer = new ProdConsBuffer(buffersize);
         Thread[] threads_prod = new Thread[nProd];
         Thread[] threads_cons = new Thread[nCons];
         for (int i = 0; i < nProd; i++) {
-            threads_prod[i] = new Producer(buffer, i, minProd, maxProd, prodTime, minQuantity, maxQuantity);
+            threads_prod[i] = new Producer(buffer, i, minProd, maxProd, prodTime);
             threads_prod[i].start();
         }
         for (int i = 0; i < nCons; i++) {

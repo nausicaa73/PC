@@ -1,4 +1,4 @@
-package src;
+package src.TaskExecutor;
 
 import java.util.Random;
 
@@ -22,7 +22,8 @@ public class Consumer extends Thread {
         while (true) {
             Random rand = new Random();
             try {
-                buffer.get(rand.nextInt(maxCons - minCons + 1) + minCons);
+                Message m = buffer.get(rand.nextInt(maxCons - minCons + 1) + minCons)[0];
+                m.run();
                 Thread.yield();
                 Thread.sleep(consTime);
             } catch (InterruptedException e) {
